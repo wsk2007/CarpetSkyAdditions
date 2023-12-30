@@ -8,8 +8,8 @@ public class SkyAdditionsCriteriaTriggers {
     public static final AllayVexTrigger ALLAY_VEX = new AllayVexTrigger();
 
     public static void registerAll() {
-        CriteriaTriggers.register(GENERATE_GEODE);
-        CriteriaTriggers.register(CONVERT_SPIDER);
-        CriteriaTriggers.register(ALLAY_VEX);
+        CriteriaTriggers.register("generate_geode", GENERATE_GEODE);
+        CriteriaTriggers.register("convert_spider", CONVERT_SPIDER);
+        CriteriaTriggers.register("allay_vex", ALLAY_VEX);
     }
 }

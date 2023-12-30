@@ -1,10 +1,15 @@
 package com.jsorrell.carpetskyadditions.advancements.criterion;
 
-import com.google.gson.JsonObject;
+import java.util.Optional;
+
 import com.jsorrell.carpetskyadditions.util.SkyAdditionsResourceLocation;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
 import net.minecraft.advancements.critereon.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.monster.CaveSpider;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -12,10 +17,6 @@ import net.minecraft.world.level.storage.loot.LootContext;
 public class ConvertSpiderTrigger extends SimpleCriterionTrigger<ConvertSpiderTrigger.Conditions> {
     static final ResourceLocation ID = new SkyAdditionsResourceLocation("convert_spider");
 
-    @Override
-    public ResourceLocation getId() {
-        return ID;
-    }
 
     public void trigger(ServerPlayer player, Spider spider, CaveSpider caveSpider) {
         LootContext spiderLootContext = EntityPredicate.createContext(player, spider);
@@ -24,33 +25,24 @@ public class ConvertSpiderTrigger extends SimpleCriterionTrigger<ConvertSpiderTr
     }
 
     @Override
-    public Conditions createInstance(JsonObject json, ContextAwarePredicate player, DeserializationContext context) {
-        ContextAwarePredicate spiderPredicate = EntityPredicate.fromJson(json, "spider", context);
-        ContextAwarePredicate caveSpiderPredicate = EntityPredicate.fromJson(json, "cave_spider", context);
-        return new Conditions(player, spiderPredicate, caveSpiderPredicate);
+    public Codec<ConvertSpiderTrigger.Conditions> codec() {
+        return ConvertSpiderTrigger.Conditions.CODEC;
     }
+    public static record Conditions(Optional<ContextAwarePredicate> player, Optional<ContextAwarePredicate> spider,
+            Optional<ContextAwarePredicate> caveSpider) implements SimpleCriterionTrigger.SimpleInstance {
 
-    public static class Conditions extends AbstractCriterionTriggerInstance {
-        private final ContextAwarePredicate spider;
-        private final ContextAwarePredicate caveSpider;
-
-        public Conditions(
-                ContextAwarePredicate player, ContextAwarePredicate spider, ContextAwarePredicate caveSpider) {
-            super(ID, player);
-            this.spider = spider;
-            this.caveSpider = caveSpider;
-        }
+        public static final Codec<ConvertSpiderTrigger.Conditions> CODEC = RecordCodecBuilder.create(
+                instance -> instance.group(
+                        ExtraCodecs.strictOptionalField(EntityPredicate.ADVANCEMENT_CODEC, "player")
+                                .forGetter(ConvertSpiderTrigger.Conditions::player),
+                        ExtraCodecs.strictOptionalField(EntityPredicate.ADVANCEMENT_CODEC, "spider")
+                                .forGetter(ConvertSpiderTrigger.Conditions::spider),
+                        ExtraCodecs.strictOptionalField(EntityPredicate.ADVANCEMENT_CODEC, "caveSpider")
+                                .forGetter(ConvertSpiderTrigger.Conditions::caveSpider))
+                        .apply(instance, ConvertSpiderTrigger.Conditions::new));
 
         public boolean matches(LootContext spiderContext, LootContext caveSpiderContext) {
-            return spider.matches(spiderContext) && caveSpider.matches(caveSpiderContext);
-        }
-
-        @Override
-        public JsonObject serializeToJson(SerializationContext context) {
-            JsonObject jsonObject = super.serializeToJson(context);
-            jsonObject.add("spider", spider.toJson(context));
-            jsonObject.add("cave_spider", caveSpider.toJson(context));
-            return jsonObject;
+            return spider.get().matches(spiderContext) && caveSpider.get().matches(caveSpiderContext);
         }
     }
 }

@@ -1,12 +1,14 @@
 package com.jsorrell.carpetskyadditions.advancements.predicates;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import com.jsorrell.carpetskyadditions.advancements.criterion.SkyAdditionsEntityPredicate;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+import java.util.Optional;
 import java.util.Set;
-import net.minecraft.util.GsonHelper;
+
+import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
@@ -15,15 +17,15 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
 import net.minecraft.world.phys.Vec3;
 
-public class SkyAdditionsLootItemEntityPropertyCondition implements LootItemCondition {
-    final SkyAdditionsEntityPredicate predicate;
-    final LootContext.EntityTarget entityTarget;
+public record SkyAdditionsLootItemEntityPropertyCondition(Optional<EntityPredicate> predicate, LootContext.EntityTarget entityTarget) implements LootItemCondition {
 
-    SkyAdditionsLootItemEntityPropertyCondition(
-            SkyAdditionsEntityPredicate entityPredicate, LootContext.EntityTarget entityTarget) {
-        this.predicate = entityPredicate;
-        this.entityTarget = entityTarget;
-    }
+   public static final Codec<SkyAdditionsLootItemEntityPropertyCondition> CODEC = RecordCodecBuilder.create(
+		instance -> instance.group(
+					ExtraCodecs.strictOptionalField(EntityPredicate.CODEC, "predicate").forGetter(SkyAdditionsLootItemEntityPropertyCondition::predicate),
+					LootContext.EntityTarget.CODEC.fieldOf("entity").forGetter(SkyAdditionsLootItemEntityPropertyCondition::entityTarget)
+				)
+				.apply(instance, SkyAdditionsLootItemEntityPropertyCondition::new)
+	);
 
     @Override
     public LootItemConditionType getType() {
@@ -32,37 +34,25 @@ public class SkyAdditionsLootItemEntityPropertyCondition implements LootItemCond
 
     @Override
     public Set<LootContextParam<?>> getReferencedContextParams() {
-        return ImmutableSet.of(LootContextParams.ORIGIN, entityTarget.getParam());
+        return ImmutableSet.of(LootContextParams.ORIGIN, this.entityTarget.getParam());
     }
 
     public boolean test(LootContext lootContext) {
         Entity entity = lootContext.getParamOrNull(entityTarget.getParam());
         Vec3 origin = lootContext.getParamOrNull(LootContextParams.ORIGIN);
-        return predicate.matches(lootContext.getLevel(), origin, entity);
+        return !this.predicate.isEmpty() && ((EntityPredicate)this.predicate.get()).matches(lootContext.getLevel(), origin, entity);
     }
 
-    public static Builder hasProperties(LootContext.EntityTarget target, SkyAdditionsEntityPredicate predicate) {
-        return () -> new SkyAdditionsLootItemEntityPropertyCondition(predicate, target);
-    }
+    public static LootItemCondition.Builder entityPresent(LootContext.EntityTarget target) {
+		return hasProperties(target, EntityPredicate.Builder.entity());
+	}
 
-    public static class Serializer
-            implements net.minecraft.world.level.storage.loot.Serializer<SkyAdditionsLootItemEntityPropertyCondition> {
-        public void serialize(
-                JsonObject jsonObject,
-                SkyAdditionsLootItemEntityPropertyCondition lootItemEntityPropertyCondition,
-                JsonSerializationContext jsonSerializationContext) {
-            jsonObject.add("predicate", lootItemEntityPropertyCondition.predicate.serializeToJson());
-            jsonObject.add("entity", jsonSerializationContext.serialize(lootItemEntityPropertyCondition.entityTarget));
-        }
+	public static LootItemCondition.Builder hasProperties(LootContext.EntityTarget target, EntityPredicate.Builder predicateBuilder) {
+		return () -> new SkyAdditionsLootItemEntityPropertyCondition(Optional.of(predicateBuilder.build()), target);
+	}
 
-        public SkyAdditionsLootItemEntityPropertyCondition deserialize(
-                JsonObject jsonObject, JsonDeserializationContext jsonDeserializationContext) {
-            SkyAdditionsEntityPredicate entityPredicate =
-                    SkyAdditionsEntityPredicate.fromJson(jsonObject.get("predicate"));
-            return new SkyAdditionsLootItemEntityPropertyCondition(
-                    entityPredicate,
-                    GsonHelper.getAsObject(
-                            jsonObject, "entity", jsonDeserializationContext, LootContext.EntityTarget.class));
-        }
-    }
+	public static LootItemCondition.Builder hasProperties(LootContext.EntityTarget target, EntityPredicate entityPredicate) {
+		return () -> new SkyAdditionsLootItemEntityPropertyCondition(Optional.of(entityPredicate), target);
+	}
+
 }

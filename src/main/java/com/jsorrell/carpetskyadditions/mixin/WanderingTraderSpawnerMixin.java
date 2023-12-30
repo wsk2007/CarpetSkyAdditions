@@ -59,8 +59,10 @@ public abstract class WanderingTraderSpawnerMixin {
                 && SkyAdditionsSettings.maxWanderingTraderSpawnChance == 0.075;
     }
 
-    // For some reason vanilla has 2 probability guards that do nothing but makes the chance not be able to go above 0.1
-    // Merging these two checks will slightly change the chance of resetting the spawn chance when no players are online
+    // For some reason vanilla has 2 probability guards that do nothing but makes
+    // the chance not be able to go above 0.1
+    // Merging these two checks will slightly change the chance of resetting the
+    // spawn chance when no players are online
     @Redirect(method = "spawn", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/RandomSource;nextInt(I)I"))
     private int skipSecondChanceCheck(RandomSource random, int bound) {
         return 100 < spawnChance ? 0 : random.nextInt(bound);
@@ -79,15 +81,7 @@ public abstract class WanderingTraderSpawnerMixin {
         return true;
     }
 
-    @Inject(
-            method = "spawn",
-            at =
-                    @At(
-                            value = "INVOKE",
-                            target =
-                                    "Lnet/minecraft/world/entity/npc/WanderingTraderSpawner;hasEnoughSpace(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Z"),
-            cancellable = true,
-            locals = LocalCapture.CAPTURE_FAILSOFT)
+    @Inject(method = "spawn", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/npc/WanderingTraderSpawner;hasEnoughSpace(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Z"), cancellable = true, locals = LocalCapture.CAPTURE_FAILSOFT)
     private void spawnTrader(
             ServerLevel serverLevel,
             CallbackInfoReturnable<Boolean> cir,
@@ -133,6 +127,7 @@ public abstract class WanderingTraderSpawnerMixin {
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     public void tick(
             ServerLevel level, boolean spawnMonsters, boolean spawnAnimals, CallbackInfoReturnable<Integer> cir) {
+
         // Ensure we don't make changes when the settings are default
         // It should be the same, but it's safer to just use the vanilla version
         if (usesDefaultSettings()) {
@@ -167,13 +162,14 @@ public abstract class WanderingTraderSpawnerMixin {
         serverLevelData.setWanderingTraderSpawnDelay(spawnDelay);
 
         if (trySpawn && level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
-            // Bound changed for high spawn chances b/c the 90% chance for trySpawn to fail is removed
+            // Bound changed for high spawn chances b/c the 90% chance for trySpawn to fail
+            // is removed
             if (random.nextInt(100 < spawnChance ? 1000 : 100) < spawnChance && spawn(level)) {
                 spawnChance = 25;
                 cir.setReturnValue(1);
             } else {
-                spawnChance = Mth.clamp(spawnChance + 25, 25, (int)
-                        Math.round(SkyAdditionsSettings.maxWanderingTraderSpawnChance * 1000d));
+                spawnChance = Mth.clamp(spawnChance + 25, 25,
+                        (int) Math.round(SkyAdditionsSettings.maxWanderingTraderSpawnChance * 1000d));
             }
 
             serverLevelData.setWanderingTraderSpawnChance(spawnChance);

@@ -59,8 +59,8 @@ public abstract class WanderingTraderMixin extends AbstractVillager {
 
     @Override
     // This only works with the mod on the client side
-    public double getMyRidingOffset() {
-        return TraderCamelHelper.isMountedTrader(asTrader()) ? -0.45 : super.getMyRidingOffset();
+    public float getMyRidingOffset(Entity entity) {
+        return TraderCamelHelper.isMountedTrader(asTrader()) ? -0.45f : super.getMyRidingOffset(entity);
     }
 
     @Override

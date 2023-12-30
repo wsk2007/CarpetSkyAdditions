@@ -28,7 +28,7 @@ public abstract class SmallDripleafSpreader {
         return topState.getValue(SmallDripleafBlock.HALF) == DoubleBlockHalf.UPPER
                 && !topState.getValue(BlockStateProperties.WATERLOGGED)
                 && level.getBlockState(pos.below()).is(Blocks.CLAY)
-                && level.getMaxLocalRawBrightness(top) == REQUIRED_LIGHT;
+                && level.getMaxLocalRawBrightness(top) >= REQUIRED_LIGHT;
     }
 
     protected static boolean canSpreadTo(ServerLevel level, BlockPos pos) {

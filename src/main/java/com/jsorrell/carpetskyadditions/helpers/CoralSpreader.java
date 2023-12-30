@@ -82,7 +82,6 @@ public abstract class CoralSpreader {
         }
 
         @Override
-        @SuppressWarnings("deprecation")
         public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
             if (!SkyAdditionsSettings.spreadingCoral) return;
             if (!Blocks.TUBE_CORAL_BLOCK.defaultBlockState().canSurvive(level, pos)) return;

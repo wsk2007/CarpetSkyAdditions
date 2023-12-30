@@ -51,7 +51,6 @@ public abstract class BaseCoralMixin extends BaseCoralPlantTypeBlock {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (SkyAdditionsSettings.coralErosion) {
             if (DeadCoralToSandHelper.tryDropSand(state, level, pos, random)) {
