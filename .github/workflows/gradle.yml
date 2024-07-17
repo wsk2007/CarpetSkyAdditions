@@ -19,4 +19,4 @@ jobs:
     - name: "Set up Gradle"
       uses: "gradle/gradle-build-action@v2"
     - name: "Execute Gradle Build"
-      run: "./gradlew build"
+      run: "./gradlew build --use-system-truststore"
